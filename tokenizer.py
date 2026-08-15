@@ -63,7 +63,8 @@ def tokenize(source: str) -> list[Token]:
         "TOKEN_LSQUARE": "[",
         "TOKEN_RSQUARE": "]",
         "TOKEN_COMMA": ",",
-        "TOKEN_DOT": "."
+        "TOKEN_DOT": ".",
+        "TOKEN_BACKSLASH": "\\"
     }
 
     # ======== KEYWORDS =========
@@ -94,15 +95,27 @@ def tokenize(source: str) -> list[Token]:
     ]
 
     # ======== NUMBERS ==========
+    NUMBERS_WDOT = [
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'
+    ]
+
     NUMBERS = [
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'
+    ]
+
+    ALPHA = [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+        'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+        'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 
+        '_'
     ]
 
     # ======== DISALLOWED IN ID =
     DISALLOW = [
         '[', ']', '{', '}', '\\', '|', '`', 
         '~', '@', ',#', '$', '^', '&', 
-        '(', ')', ',', '.', '?', ';', ' ' 
+        '(', ')', ',', '.', '?', ';', ' ', '\n'
     ]
 
     with open(source, "r") as f:
@@ -112,12 +125,15 @@ def tokenize(source: str) -> list[Token]:
         while i < len(content):
             if i + 1 >= len(content): next_char_eof = True
             else: next_char_eof = False
-            print(i, repr(content[i]), len(tokens))
             c = content[i]
             pre_addition_tok_list = tokens.copy()
             if isinstance(c, str):
                 if not next_char_eof and c == "\n":
                     tokens.append(Token(type="MISC", token="TOKEN_NEWLINE", value=c))
+                    i += 1
+                    continue
+                elif c == "\\":
+                    tokens.append(Token(type="PUNCTUATION", token="TOKEN_BACKSL", value=c))
                     i += 1
                     continue
                 for token, v in OPERATORS.items():
@@ -143,22 +159,23 @@ def tokenize(source: str) -> list[Token]:
                         next_char = content[i + 1]
                     else: 
                         next_char = None
-                    if c == v:
-                        if (v == '>' and next_char == '=') or \
-                        (v == '<' and next_char == '=') or \
-                        (v == '=' and next_char == '=') or \
-                        (v == '!' and next_char == "=") or \
-                        (v == '&' and next_char == '&') or \
-                        (v == '|' and next_char == '|') or \
-                        (v == '-' and next_char == '>') and \
-                        next_char != None:
-                            tokens.append(Token(type="COMPARES", token=token, value=v + next_char))
-                            i += len(v + next_char);
-                            break
+                    if next_char != None and c == v[0]:
+                        if next_char == v[1]:
+                            if c + next_char == ">=" or c + next_char == ">=" or \
+                            c + next_char == "==" or c + next_char == "!=" or \
+                            c + next_char == "&&" or c + next_char == "||" or \
+                            c + next_char == "->" and next_char != None:
+                                tokens.append(Token(type="COMPARES", token=token, value=v))
+                                i += len(v);
+                                break
+                            else:
+                                continue
                         else:
-                            tokens.append(Token(type="COMPARES", token=token, value=v))
-                            i += 1
-                            break
+                            if c == '>' or c == '<' or c == '!'\
+                            and next_char != None:
+                                tokens.append(Token(type="COMPARES", token=token, value=v))
+                                i += len(v)
+                                break
                 if tokens != pre_addition_tok_list:
                     continue
                 for token, v in TYPE.items():
@@ -210,24 +227,43 @@ def tokenize(source: str) -> list[Token]:
                             break
                 if tokens != pre_addition_tok_list:
                     continue
-                for token, v in PUNCTUATION.items():
-                    if c == v:
-                        tokens.append(Token(type="PUNCTUATION", token=token, value=v))
-                        i += 1
+                for number in NUMBERS_WDOT:
+                    dot_seen = False
+                    too_many_dots = False
+                    if c == number and not next_char_eof and (number != '.' or content[i + 1] in NUMBERS):
+                        j = i
+                        num = content[j]; j += 1
+
+                        if content[j - 1] == "." and content[j] in NUMBERS:
+                            too_many_dots = True
+                            dot_seen = True
+
+                        while not j + 1 >= len(content) and content[j] in NUMBERS_WDOT:
+                            if content[j] == "." and not dot_seen:
+                                dot_seen = True
+                            elif content[j] == "." and dot_seen:
+                                too_many_dots = True
+                            num += content[j]
+                            j += 1
+
+                        if not too_many_dots: 
+                            i += len(num)
+                            if num[len(num) - 1] == ".": 
+                                num += "0"
+                            tokens.append(Token(type="NUMBER", token="TOKEN_NUMBER", value=num))
+                        else: 
+                            i += len(num)
+                            if num[len(num) - 1] == ".": 
+                                num += "0"
+                            tokens.append(Token(type="NUMBER", token="TOKEN_MALFORMEDNUM", value=num)); 
                         break
                     else: continue
                 if tokens != pre_addition_tok_list:
                     continue
-                for number in NUMBERS:
-                    if c == number and not next_char_eof:
-                        j = i
-                        num = content[j]; j += 1
-                        while not j + 1 >= len(content) and content[j] not in [" ", "\n"]:
-                            num += content[j]
-                            j += 1
-
-                        tokens.append(Token(type="NUMBER", token="TOKEN_NUMBER", value=num))
-                        i += len(num)
+                for token, v in PUNCTUATION.items():
+                    if c == v:
+                        tokens.append(Token(type="PUNCTUATION", token=token, value=v))
+                        i += 1
                         break
                     else: continue
                 if tokens != pre_addition_tok_list:
@@ -299,6 +335,7 @@ def tokenize(source: str) -> list[Token]:
                     while content[j] not in OPERATORS.values() and \
                     content[j] not in COMPARES.values() and \
                     content[j] not in TYPE.values() and \
+                    content[j] not in PUNCTUATION.values() and \
                     content[j] not in DISALLOW:
                         identifier += content[j]
                         j += 1
