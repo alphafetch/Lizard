@@ -23,7 +23,7 @@ class ExpressionNode(Node):
 
 # ---------- Declaration ----------
 class VarDeclaration(Node):
-    def __init__(self, type: Token, name: Token, val: ExpressionNode) -> None:
+    def __init__(self, type: str, name: str, val: ExpressionNode) -> None:
         self.type = type
         self.name = name
         self.val = val
@@ -42,13 +42,13 @@ class Parameter(Node):
 
 # ---------- Statements ----------
 class If(Node):
-    def __init__(self, body: BodyTokens, next: If | None = None, condition: list[Token] | None = None) -> None:
+    def __init__(self, body: BodyTokens, next: If | None = None, condition: ExpressionNode | None = None) -> None:
         self.body = body
         self.next = next
         self.condition = condition
 
 class While(Node):
-    def __init__(self, body: BodyTokens, condition: list[Token] | None = None) -> None:
+    def __init__(self, body: BodyTokens, condition: ExpressionNode | None = None) -> None:
         self.condition = condition
         self.body = body
 
