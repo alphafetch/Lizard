@@ -118,3 +118,55 @@ class CastExpr(ExpressionNode):
     def __init__(self, type: Token, castee: ExpressionNode) -> None:
         self.type = type
         self.castee = castee
+
+def filter_token_list(tokens: list[Token]):
+    iter_list = tokens.copy()
+    for i, token in enumerate(iter_list):
+        if token.token in ("TOKEN_SPACE", "TOKEN_NEWLINE", "TOKEN_COMMENT"):
+            tokens.remove(token)
+        
+    for i, token in enumerate(tokens):
+        if token.token in ("TOKEN_MALFORMEDNUM", "TOKEN_UNTERMSTR", "TOKEN_CHARTOOLONGORUNTERM"):
+            match token.token:
+                case "TOKEN_MALFORMEDNUM":        raise errors.MalformedNumber("Number malformed.")
+                case "TOKEN_UNTERMSTR":           raise errors.UnterminatedString("String unterminated.")
+                case "TOKEN_CHARTOOLONGORUNTERM": raise errors.CharacterTooLong("Character type too long.")
+                case _:                           raise Exception("Unknown error occured.")
+    
+    return tokens
+
+def parse_var_dec(tokens, i):
+    token = tokens[i]
+
+    while token.token != "TOKEN_SEMI":
+        token = tokens[i]
+
+        if i + 1 >= len(tokens): next_char_end = True
+        else:                    next_char_end = False
+
+        match token.token:
+            case "TOKEN_INT":   type = "Integer"
+            case "TOKEN_CHAR":  type = "Character"
+            case "TOKEN_STR":   type = "String"
+            case "TOKEN_BOOL":  type = "Boolean"
+            case "TOKEN_FLOAT": type = "Floating_Point"
+            case "TOKEN_DICT":  type = "Dictionary"
+            case "TOKEN_INFER": type = "Inferred_Var"
+            case "TOKEN_VOID":  raise errors.TypeDeclarationError("Variable declaration cannot be of type `void`.")
+            case "TOKEN_VARID": identifier = token.value
+            case "TOKEN_ASSIGN": 
+                if not next_char_end:
+                    if tokens[i + 1].token in ["TOKEN_NUMBER", "TOKEN_STRING"]:
+                        value = Literal(tokens[i + 1].value)
+                    else:
+                        raise errors.DeclarationError("Value must be of class `Literal`.")
+                else:
+                    raise errors.DeclarationError("Variable assigns with `=` but no value follows.")
+                
+        i += 1
+
+    new_index = i
+
+    VarDeclaration_instance = VarDeclaration(type, identifier, value)
+
+    return (VarDeclaration_instance, new_index)
