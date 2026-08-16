@@ -159,7 +159,7 @@ def parse_var_dec(tokens, i):
                 if not next_char_end:
                     if tokens[i + 1].token in ["TOKEN_NUMBER", "TOKEN_STRING"]:
                         value = Literal(tokens[i + 1].value)
-                        if tokens[i + 2].token != "TOKEN_SEMI":
+                        if not i + 2 >= len(tokens) and tokens[i + 2].token != "TOKEN_SEMI":
                             raise errors.DeclarationError("Declaration must terminate after value.")
                     else:
                         raise     errors.DeclarationError("Value must be of class `Literal`.")
