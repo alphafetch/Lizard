@@ -12,3 +12,6 @@ class UnterminatedString(Exception):
 
 class CharacterTooLong(Exception):
     pass
+
+class UnterminatedLine(Exception):
+    pass
