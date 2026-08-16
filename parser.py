@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from tokenizer import Token
+import error_helper as errors
 
 # ============= NODES =============
 
