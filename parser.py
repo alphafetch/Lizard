@@ -139,8 +139,9 @@ def filter_token_list(tokens: list[Token]):
 def parse_var_dec(tokens, i):
     token = tokens[i]
 
-    while token.token != "TOKEN_SEMI":
+    while token.token != "TOKEN_SEMI" and not i >= len(tokens):
         token = tokens[i]
+        current_i = i
 
         if i + 1 >= len(tokens): next_char_end = True
         else:                    next_char_end = False
@@ -159,14 +160,18 @@ def parse_var_dec(tokens, i):
                 if not next_char_end:
                     if tokens[i + 1].token in ["TOKEN_NUMBER", "TOKEN_STRING"]:
                         value = Literal(tokens[i + 1].value)
+                        if i + 2 >= len(tokens):
+                            raise errors.UnterminatedLine("Line does not end with a semicolon.")
                         if not i + 2 >= len(tokens) and tokens[i + 2].token != "TOKEN_SEMI":
                             raise errors.DeclarationError("Declaration must terminate after value.")
+                        i += 3
                     else:
                         raise     errors.DeclarationError("Value must be of class `Literal`.")
                 else:
                     raise         errors.DeclarationError("Variable assigns with `=` but no value follows.")
                 
-        i += 1
+        if current_i == i: i += 1
+        else: continue
 
     new_index = i
 
