@@ -1,9 +1,9 @@
 import tokenizer
 import parser
 
-DEBUG_TOKENIZATION = False
+DEBUG_TOKENIZATION = True
 DEBUG_PARSING = True
-tokens = tokenizer.tokenize("C:\\Users\\elias\\Documents\\Projects\\Lizard\\Source\\testing\\test4.liz")
+tokens = tokenizer.tokenize("C:\\Users\\elias\\Documents\\Projects\\Lizard\\Source\\testing\\test5.liz")
 
 if DEBUG_TOKENIZATION:
     for t in tokens:

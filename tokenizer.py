@@ -257,6 +257,10 @@ def tokenize(source: str) -> list[Token]:
                                 num += "0"
                             tokens.append(Token(type="NUMBER", token="TOKEN_MALFORMEDNUM", value=num)); 
                         break
+                    elif c == number and next_char_eof and number != '.':
+                        tokens.append(Token(type="NUMBER", token="TOKEN_NUMBER", value=c))
+                        i += 1
+                        break
                     else: continue
                 if tokens != pre_addition_tok_list:
                     continue
